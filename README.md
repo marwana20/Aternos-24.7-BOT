@@ -1,63 +1,107 @@
-# Aternos Server Bot Setup Guide
+# Aternos 24/7 Bot
 
-**Update: 
-  - added GUI for Webpage
-  - added start, stop, reconnect bot option on webpage
-  - Removed ServerTime update due to mismatch of time
+A Minecraft bot that connects to your Aternos server and stays active so the
+server is not auto-shut-down for inactivity. The bot performs lightweight
+anti-AFK movements (moves, looks around, jumps, swings arm), exposes a tiny
+web page so a free uptime service (such as UptimeRobot) can keep the host
+awake, and automatically reconnects if it gets kicked or disconnects.
 
-[Watch the Video Tutorial!](https://youtu.be/mRgLIu1sLMQ)**
+> Update:
+> - Switched to `mineflayer` for proper protocol handling and built-in
+>   keep-alive responses.
+> - Added real anti-AFK behavior (random movement, jumps, look, swing arm)
+>   so Aternos no longer marks the bot as idle.
+> - Fixed the `setInterval` leak and variable-shadowing bug from the previous
+>   version.
+> - Fixed the web UI buttons (`Start`, `Stop`, `Reconnect`) so they actually
+>   send commands.
+> - Added `package.json`, environment-variable configuration, and a
+>   `/health` endpoint for uptime pings.
 
-This guide will help you set up and run a Minecraft bot on an Aternos server using Replit and UptimeRobot. Follow these steps to ensure a smooth setup.
+[Watch the original Video Tutorial!](https://youtu.be/mRgLIu1sLMQ)
 
 ## Requirements
 
-- Aternos server
-- Replit account
-- UptimeRobot free account
+- An Aternos server (cracked / offline mode by default).
+- A free hosting service that runs Node.js (Replit, Render, Railway, a VPS,
+  or even your own machine).
+- Optional: a free [UptimeRobot](https://uptimerobot.com/) account to ping
+  the web URL every 5 minutes so the host stays awake.
 
-## Setup Instructions
+## Setup
 
-1. **Create and Start Aternos Server:**
+1. **Create and start your Aternos server.** Note the IP and port (for
+   example `DOOMS_DAY_REBORN.aternos.me:59173`).
 
-   - Create your own Aternos server.
-   - Start the server and copy the IP address of the server you just created.
+2. **Clone this repository** into your hosting service or local machine:
 
-2. **Replit Setup:**
+   ```bash
+   git clone https://github.com/sayanpramanik2012/Aternos-24.7-BOT.git
+   cd Aternos-24.7-BOT
+   npm install
+   ```
 
-   - Open your Replit account and start a new project.
-   - Copy the content of `index.js` and `main.html` into your Replit project.
-   - Click on "Run" to start the bot.
+3. **Configure the bot.** Either edit the defaults at the top of
+   `index.js` or set environment variables:
 
-3. **Verify Bot Connection:**
+   | Variable                | Default                           | Description                                 |
+   | ----------------------- | --------------------------------- | ------------------------------------------- |
+   | `SERVER_HOST`           | `DOOMS_DAY_REBORN.aternos.me`     | Aternos server hostname.                    |
+   | `SERVER_PORT`           | `59173`                           | Aternos server port.                        |
+   | `BOT_USERNAME`          | `247_Monitor`                     | In-game username for the bot.               |
+   | `MC_VERSION`            | auto-detect                       | Minecraft version, e.g. `1.20.1`.           |
+   | `RECONNECT_INTERVAL_MS` | `40000`                           | Wait time before reconnecting after kicks.  |
+   | `ANTI_AFK_INTERVAL_MS`  | `20000`                           | Frequency of anti-AFK movements.            |
+   | `PORT`                  | `3000`                            | HTTP port for the web UI.                   |
 
-   - Once the bot is running, check the console in Replit. You should see a message indicating that the bot is connected, followed by the server time. The bot will disconnect and reconnect in a loop if everything works correctly.
+4. **Run the bot:**
 
-4. **Get Webview URL:**
+   ```bash
+   npm start
+   ```
 
-   - In the Replit web view on the right-hand side, copy the web address (URL).
+   The bot will connect to the server and the web UI will be available at
+   `http://localhost:3000` (or your hosted URL).
 
-5. **Set up UptimeRobot:**
+5. **(Optional) Keep the host awake** by adding the public URL of your bot
+   as an HTTP monitor on UptimeRobot. Use either `/` or `/health` as the
+   target — UptimeRobot will ping it every 5 minutes.
 
-   - Create a UptimeRobot account if you don't have one.
-   - Add a new monitor and select "HTTP" as the monitor type.
-   - Paste the URL from the Replit web view into the URL section of UptimeRobot.
-   - Click on "Create Monitor" to finalize the setup.
+## Web UI
 
-## Configuration
+Open the served URL in a browser. You will see live bot status and three
+buttons:
 
-In the `index.js` file, you can modify the following variables to customize the bot's behavior:
+- **Start Bot** — starts the bot if it is not running.
+- **Stop Bot** — disconnects the bot and stops auto-reconnect.
+- **Reconnect Bot** — gracefully disconnects and immediately re-establishes
+  the connection.
 
-- `serverHost`: The Minecraft server host name.
-- `serverPort`: The Minecraft server port.
-- `botUsername`: The username of the Minecraft bot.
-- `reconnectInterval`: The time (in milliseconds) to wait before attempting to reconnect after disconnection.
+## How the anti-AFK works
 
-## Usage
+Aternos shuts a server down if no players are active. While the bot is
+spawned in-world it periodically:
 
-Once the bot logs in to the Minecraft server, it will print a message in the Replit console. The bot will also send a chat message every time the game time is updated.
+- Picks a random direction (forward / back / left / right) and walks
+  briefly.
+- Occasionally jumps.
+- Looks around with random yaw / pitch.
+- Swings its arm.
 
-Using Replit ensures that the bot runs on a virtual machine on your account, and UptimeRobot pings the Replit server every 5 minutes, preventing the bot from sleeping. This setup ensures the bot remains active and responsive on your Aternos server.
+That activity is enough to keep Aternos from marking the bot as idle.
 
-Happy botting! 🤖🎮
+## Troubleshooting
+
+- **Bot keeps getting kicked with "Failed to verify username":** the server
+  is in online mode. Either switch your Aternos server to cracked / offline
+  mode, or supply Microsoft credentials (see `mineflayer` docs).
+- **`ECONNREFUSED` / connect errors:** the Aternos server is offline. Start
+  it from the Aternos panel; the bot will reconnect on its own.
+- **Wrong protocol version:** set `MC_VERSION` to match the version your
+  server runs (for example `1.20.1`).
+
+## License
+
+MIT — see [LICENSE](./LICENSE).
 
 🔗 GitHub Link: [GitHub Repo](https://github.com/sayanpramanik2012/Aternos-24.7-BOT)
