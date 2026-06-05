@@ -10,7 +10,7 @@ const botUsername = process.env.BOT_USERNAME || 'ChaosKeeper';
 const minecraftVersion = process.env.MC_VERSION || false;
 const reconnectInterval = parseInt(process.env.RECONNECT_INTERVAL_MS || '40000', 10);
 const antiAfkInterval = parseInt(process.env.ANTI_AFK_INTERVAL_MS || '20000', 10);
-const httpPort = parseInt(process.env.PORT || '3000', 10);
+const httpPort = parseInt(process.env.PORT || '3038', 10);
 
 const app = express();
 const server = http.createServer(app);
